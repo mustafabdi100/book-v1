@@ -25,18 +25,23 @@ jobs:
         run: |
           flutter build ipa --release --no-codesign
           
+      - name: List Build Directory
+        run: |
+          echo "Listing build directory contents:"
+          ls -R build/ios/
+          
       - name: Upload Artifact
         uses: actions/upload-artifact@v3
         with:
           name: release-ipa
-          path: build/ios/ipa/*.ipa
+          path: build/ios/archive/Runner.ipa  # Updated path
           
       - name: Install Firebase CLI
         run: npm install -g firebase-tools
         
       - name: Deploy to Firebase App Distribution
         run: |
-          firebase appdistribution:distribute build/ios/ipa/*.ipa \
+          firebase appdistribution:distribute "build/ios/archive/Runner.ipa" \
             --app ${{ secrets.FIREBASE_APP_ID }} \
             --token ${{ secrets.FIREBASE_TOKEN }} \
             --groups testers
