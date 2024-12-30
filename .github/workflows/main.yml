@@ -25,10 +25,16 @@ jobs:
         run: |
           flutter build ipa --release --no-codesign
           
-      - name: Upload to Firebase App Distribution
-        uses: wzieba/Firebase-Distribution-Github-Action@v1
+      - name: Upload Artifact to Firebase
+        uses: actions/upload-artifact@v2
         with:
-          appId: ${{secrets.FIREBASE_APP_ID}}
-          serviceCredentialsFileContent: ${{secrets.FIREBASE_SERVICE_ACCOUNT}}
+          name: release-ipa
+          path: build/ios/ipa/*.ipa
+          
+      - name: Upload to Firebase App Distribution
+        uses: fastlane/github-actions/firebase-app-distribution@latest
+        with:
+          firebase_app_id: ${{ secrets.FIREBASE_APP_ID }}
+          firebase_token: ${{ secrets.FIREBASE_TOKEN }}
+          file_path: build/ios/ipa/*.ipa
           groups: testers
-          file: build/ios/ipa/book_subscription_app.ipa
