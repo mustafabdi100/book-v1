@@ -21,20 +21,14 @@ jobs:
           cd ios
           pod install
           
-      - name: Set up code signing
-        run: |
-          cd ios
-          security create-keychain -p "" build.keychain
-          security default-keychain -s build.keychain
-          security unlock-keychain -p "" build.keychain
-          security set-keychain-settings -t 3600 -u build.keychain
-          
       - name: Build iOS IPA
         run: |
           flutter build ios --release --no-codesign
           cd build/ios/iphoneos
-          mkdir Payload
-          cp -r Runner.app Payload
+          mkdir -p Payload
+          cp -r Runner.app Payload/
+          # Add proper iOS info
+          /usr/libexec/PlistBuddy -c "Add :CFBundleSupportedPlatforms:0 string iPhoneOS" Payload/Runner.app/Info.plist
           zip -r app.ipa Payload
           
       - name: Upload Artifact
@@ -49,12 +43,13 @@ jobs:
           node-version: '18'
           
       - name: Install Firebase CLI
-        run: |
-          npm install -g firebase-tools
-          which firebase
+        run: npm install -g firebase-tools
           
       - name: Deploy to Firebase App Distribution
+        env:
+          GOOGLE_APPLICATION_CREDENTIALS: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
         run: |
+          echo "$GOOGLE_APPLICATION_CREDENTIALS" > service-account.json
           npx firebase-tools appdistribution:distribute "build/ios/iphoneos/app.ipa" \
             --app ${{ secrets.FIREBASE_APP_ID }} \
             --token ${{ secrets.FIREBASE_TOKEN }} \
