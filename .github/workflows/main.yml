@@ -1,7 +1,7 @@
-name: iOS Build
+name: iOS Build & Deploy
 on:
   push:
-    branches: [ main ]  # change this if your main branch has a different name
+    branches: [ main ]
 
 jobs:
   build:
@@ -23,3 +23,11 @@ jobs:
           
       - name: Build iOS
         run: flutter build ios --release --no-codesign
+        
+      - name: Upload to Firebase App Distribution
+        uses: wzieba/Firebase-Distribution-Github-Action@v1
+        with:
+          appId: ${{secrets.FIREBASE_APP_ID}}
+          serviceCredentialsFileContent: ${{secrets.FIREBASE_SERVICE_ACCOUNT}}
+          groups: testers
+          file: build/ios/iphoneos/Runner.app
