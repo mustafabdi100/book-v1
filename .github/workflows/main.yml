@@ -25,16 +25,18 @@ jobs:
         run: |
           flutter build ipa --release --no-codesign
           
-      - name: Upload Artifact to Firebase
-        uses: actions/upload-artifact@v3    # Updated from v2 to v3
+      - name: Upload Artifact
+        uses: actions/upload-artifact@v3
         with:
           name: release-ipa
           path: build/ios/ipa/*.ipa
           
-      - name: Upload to Firebase App Distribution
-        uses: fastlane/github-actions/firebase-app-distribution@latest
-        with:
-          firebase_app_id: ${{ secrets.FIREBASE_APP_ID }}
-          firebase_token: ${{ secrets.FIREBASE_TOKEN }}
-          file_path: build/ios/ipa/*.ipa
-          groups: testers
+      - name: Install Firebase CLI
+        run: npm install -g firebase-tools
+        
+      - name: Deploy to Firebase App Distribution
+        run: |
+          firebase appdistribution:distribute build/ios/ipa/*.ipa \
+            --app ${{ secrets.FIREBASE_APP_ID }} \
+            --token ${{ secrets.FIREBASE_TOKEN }} \
+            --groups testers
