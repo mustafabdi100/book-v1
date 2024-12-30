@@ -21,36 +21,32 @@ jobs:
           cd ios
           pod install
           
+      - name: Set up code signing
+        run: |
+          cd ios
+          security create-keychain -p "" build.keychain
+          security default-keychain -s build.keychain
+          security unlock-keychain -p "" build.keychain
+          security set-keychain-settings -t 3600 -u build.keychain
+          
       - name: Build iOS IPA
         run: |
-          flutter build ipa --release --no-codesign
-          echo "Checking build directory contents:"
-          ls -R build/ios/
-          
-      - name: Show IPA Location
-        run: |
-          find build -name "*.ipa" -type f
+          flutter build ios --release --no-codesign
+          cd build/ios/iphoneos
+          mkdir Payload
+          cp -r Runner.app Payload
+          zip -r app.ipa Payload
+          ls -la app.ipa
           
       - name: Upload Artifact
         uses: actions/upload-artifact@v3
         with:
           name: release-ipa
-          path: |
-            build/**/*.ipa
-            
-      - name: Install Firebase CLI
-        run: npm install -g firebase-tools
-        
+          path: build/ios/iphoneos/app.ipa
+          
       - name: Deploy to Firebase App Distribution
         run: |
-          IPA_PATH=$(find build -name "*.ipa" -type f)
-          if [ -n "$IPA_PATH" ]; then
-            echo "Found IPA at: $IPA_PATH"
-            firebase appdistribution:distribute "$IPA_PATH" \
-              --app ${{ secrets.FIREBASE_APP_ID }} \
-              --token ${{ secrets.FIREBASE_TOKEN }} \
-              --groups testers
-          else
-            echo "No IPA file found"
-            exit 1
-          fi
+          firebase appdistribution:distribute "build/ios/iphoneos/app.ipa" \
+            --app ${{ secrets.FIREBASE_APP_ID }} \
+            --token ${{ secrets.FIREBASE_TOKEN }} \
+            --groups testers
