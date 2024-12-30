@@ -24,24 +24,33 @@ jobs:
       - name: Build iOS IPA
         run: |
           flutter build ipa --release --no-codesign
-          
-      - name: List Build Directory
-        run: |
-          echo "Listing build directory contents:"
+          echo "Checking build directory contents:"
           ls -R build/ios/
+          
+      - name: Show IPA Location
+        run: |
+          find build -name "*.ipa" -type f
           
       - name: Upload Artifact
         uses: actions/upload-artifact@v3
         with:
           name: release-ipa
-          path: build/ios/archive/Runner.ipa  # Updated path
-          
+          path: |
+            build/**/*.ipa
+            
       - name: Install Firebase CLI
         run: npm install -g firebase-tools
         
       - name: Deploy to Firebase App Distribution
         run: |
-          firebase appdistribution:distribute "build/ios/archive/Runner.ipa" \
-            --app ${{ secrets.FIREBASE_APP_ID }} \
-            --token ${{ secrets.FIREBASE_TOKEN }} \
-            --groups testers
+          IPA_PATH=$(find build -name "*.ipa" -type f)
+          if [ -n "$IPA_PATH" ]; then
+            echo "Found IPA at: $IPA_PATH"
+            firebase appdistribution:distribute "$IPA_PATH" \
+              --app ${{ secrets.FIREBASE_APP_ID }} \
+              --token ${{ secrets.FIREBASE_TOKEN }} \
+              --groups testers
+          else
+            echo "No IPA file found"
+            exit 1
+          fi
