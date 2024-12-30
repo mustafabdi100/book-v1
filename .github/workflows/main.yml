@@ -21,13 +21,14 @@ jobs:
           cd ios
           pod install
           
-      - name: Build iOS
-        run: flutter build ios --release --no-codesign
-        
+      - name: Build iOS IPA
+        run: |
+          flutter build ipa --release --no-codesign
+          
       - name: Upload to Firebase App Distribution
         uses: wzieba/Firebase-Distribution-Github-Action@v1
         with:
           appId: ${{secrets.FIREBASE_APP_ID}}
           serviceCredentialsFileContent: ${{secrets.FIREBASE_SERVICE_ACCOUNT}}
           groups: testers
-          file: build/ios/iphoneos/Runner.app
+          file: build/ios/ipa/book_subscription_app.ipa
